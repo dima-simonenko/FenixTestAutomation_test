@@ -28,7 +28,7 @@ namespace FenixTestAutomation.Services
         {
             _htmlContent.AppendLine("<html><head><title>Fenix Automation Report</title>");
             _htmlContent.AppendLine("<style>");
-            _htmlContent.AppendLine("body{font-family:Arial;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:8px;} th{background-color:#f2f2f2;} img{margin-top:5px;cursor:pointer;} .modal{display:none;position:fixed;z-index:1;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.8);} .modal-content {margin:auto;display:block;width:95%;max-width:1200px;}\r\n .close{position:absolute;top:50px;right:50px;color:white;font-size:40px;font-weight:bold;cursor:pointer;}");
+            _htmlContent.AppendLine("body{font-family:Arial;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ddd;padding:8px;} th{background-color:#f2f2f2;} img{margin-top:5px;cursor:pointer;} .modal{display:none;position:fixed;z-index:1;padding-top:100px;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.8);} .modal-content{margin:auto;display:block;width:95%;max-width:1200px;} .close{position:absolute;top:50px;right:50px;color:white;font-size:40px;font-weight:bold;cursor:pointer;}");
             _htmlContent.AppendLine("</style>");
 
             _htmlContent.AppendLine("<script>");
@@ -39,7 +39,6 @@ namespace FenixTestAutomation.Services
             _htmlContent.AppendLine("<h1>Отчёт об автоматизации тестирования Fenix</h1>");
             _htmlContent.AppendLine($"<p>Дата: {DateTime.Now}</p>");
 
-            // Добавляем модальное окно для увеличения изображения
             _htmlContent.AppendLine("<div id='imgModal' class='modal'>");
             _htmlContent.AppendLine("<span class='close' onclick='closeModal()'>&times;</span>");
             _htmlContent.AppendLine("<img class='modal-content' id='modalImage'>");

@@ -1,13 +1,13 @@
-﻿// Tests/FenixHotkeyTests.cs
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using FlaUI.Core;
 using FlaUI.UIA3;
 using FenixTestAutomation.Services;
 using FenixTestAutomation.Constants;
 using FenixTestAutomation.Utils;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using Newtonsoft.Json;
 
 namespace FenixTestAutomation.Tests
 {
@@ -19,25 +19,23 @@ namespace FenixTestAutomation.Tests
         private ProjectCreator _projectCreator;
         private ToolActivator _toolActivator;
         private ScreenshotService _screenshotService;
-        private static HtmlReportService _htmlReportService = new HtmlReportService();
+
+        private const string AllureResultsPath = @"C:\Users\dimas\Documents\AllureResults";
 
         [SetUp]
         public void SetUp()
         {
             _app = Application.Attach("Fenix");
             _automation = new UIA3Automation();
+
+            if (!Directory.Exists(AllureResultsPath))
+                Directory.CreateDirectory(AllureResultsPath);
         }
 
         [TearDown]
         public void TearDown()
         {
             _automation?.Dispose();
-        }
-
-        [OneTimeTearDown]
-        public void FinalizeReport()
-        {
-            _htmlReportService.FinalizeReport();
         }
 
         [TestCase("Гражданский объект", "rbCivil")]
@@ -51,7 +49,7 @@ namespace FenixTestAutomation.Tests
             _toolActivator = new ToolActivator(mainWindow, _automation);
             _screenshotService = new ScreenshotService(mainWindow);
 
-            var toolResults = new List<(string ToolName, bool IsSuccess, string ScreenshotPath)>();
+            var steps = new List<AllureStep>();
 
             foreach (var tool in HotkeyList.Tools)
             {
@@ -61,14 +59,57 @@ namespace FenixTestAutomation.Tests
                 _screenshotService.Capture(tool.Name, projectFolder);
 
                 var screenshotPath = Path.Combine(projectFolder, "Screenshots", $"{tool.Name.Replace(" ", "_")}.png");
-                toolResults.Add((tool.Name, result, screenshotPath));
+
+                steps.Add(new AllureStep
+                {
+                    name = $"Активация инструмента '{tool.Name}'",
+                    status = result ? "passed" : "failed",
+                    attachments = new List<AllureAttachment>
+                    {
+                        new AllureAttachment
+                        {
+                            name = "Screenshot",
+                            type = "image/png",
+                            source = screenshotPath
+                        }
+                    }
+                });
             }
 
-            string fnxFilePath = Path.Combine(projectFolder, $"{projectType.Replace(" ", "_")}.fnx");
+            var testResult = new AllureTestResult
+            {
+                uuid = Guid.NewGuid().ToString(),
+                name = $"Тест проекта {projectType}",
+                status = "passed",
+                steps = steps
+            };
 
-            _htmlReportService.AddProjectSection(projectType, fnxFilePath, toolResults);
+            var resultFile = Path.Combine(AllureResultsPath, $"{testResult.uuid}-result.json");
+            File.WriteAllText(resultFile, JsonConvert.SerializeObject(testResult, Formatting.Indented));
 
             _projectCreator.SaveAndClose(projectFolder);
         }
+    }
+
+    public class AllureTestResult
+    {
+        public string uuid { get; set; }
+        public string name { get; set; }
+        public string status { get; set; }
+        public List<AllureStep> steps { get; set; }
+    }
+
+    public class AllureStep
+    {
+        public string name { get; set; }
+        public string status { get; set; }
+        public List<AllureAttachment> attachments { get; set; }
+    }
+
+    public class AllureAttachment
+    {
+        public string name { get; set; }
+        public string type { get; set; }
+        public string source { get; set; }
     }
 }
