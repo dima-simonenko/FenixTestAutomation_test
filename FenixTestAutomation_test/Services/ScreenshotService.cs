@@ -1,51 +1,37 @@
-﻿// Services/ScreenshotService.cs
-using System;
+﻿using System;
 using System.IO;
-using System.Drawing;
-using System.Drawing.Imaging;
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
-
-using DrawingFont = System.Drawing.Font;
-using DrawingBrushes = System.Drawing.Brushes;
-using DrawingPoint = System.Drawing.Point;
-using DrawingFontStyle = System.Drawing.FontStyle;
-using DrawingImageFormat = System.Drawing.Imaging.ImageFormat;
-using DrawingBitmap = System.Drawing.Bitmap;
 
 namespace FenixTestAutomation.Services
 {
     public class ScreenshotService
     {
-        private readonly Window _window;
+        private readonly Window _mainWindow;
 
-        public ScreenshotService(Window window)
+        public ScreenshotService(Window mainWindow)
         {
-            _window = window;
+            _mainWindow = mainWindow;
         }
 
-        public void Capture(string toolName, string projectFolder)
+        public void Capture(string fileName, string projectFolder)
         {
-            string screenshotFolder = Path.Combine(projectFolder, "Screenshots");
-            if (!Directory.Exists(screenshotFolder))
-                Directory.CreateDirectory(screenshotFolder);
-
-            string safeName = toolName.Replace(" ", "_") + ".png";
-            string filePath = Path.Combine(screenshotFolder, safeName);
-
-            var img = FlaUI.Core.Capturing.Capture.Element(_window);
-            using (var bmp = new DrawingBitmap(img.Bitmap))
-            using (var g = Graphics.FromImage(bmp))
+            try
             {
-                var font = new DrawingFont("Arial", 16, DrawingFontStyle.Bold);
-                var brush = DrawingBrushes.Yellow;
-                var outline = DrawingBrushes.Black;
-                var position = new DrawingPoint(10, 10);
+                var screenshotsDir = Path.Combine(projectFolder, "Screenshots");
+                if (!Directory.Exists(screenshotsDir))
+                    Directory.CreateDirectory(screenshotsDir);
 
-                g.DrawString(toolName, font, outline, position.X + 1, position.Y + 1);
-                g.DrawString(toolName, font, brush, position);
+                var safeFileName = $"{fileName.Replace(" ", "_")}.png";
+                var filePath = Path.Combine(screenshotsDir, safeFileName);
 
-                bmp.Save(filePath, DrawingImageFormat.Png);
+                var image = FlaUI.Core.Capturing.Capture.Element(_mainWindow);
+                image.ToFile(filePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при сохранении скриншота: {ex.Message}");
             }
         }
     }

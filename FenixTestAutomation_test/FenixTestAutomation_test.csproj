@@ -161,12 +161,14 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\HtmlReportService.cs" />
     <Compile Include="Tests\FenixHotkeyTests.cs" />
+    <Compile Include="Tests\FenixWallDrawingTest.cs" />
     <Compile Include="Tests\ProjectCreator.cs" />
     <Compile Include="Services\ScreenshotService.cs" />
     <Compile Include="Services\ToolActivator.cs" />
     <Compile Include="Utils\AllureReporter.cs" />
     <Compile Include="Utils\ConsoleHelper.cs" />
     <Compile Include="Utils\KeyParser.cs" />
+    <Compile Include="Utils\MouseSimulator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="allureConfig.Template.json" />

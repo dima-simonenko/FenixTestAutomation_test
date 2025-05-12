@@ -1,52 +1,89 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace FenixTestAutomation.Utils
+public class AllureTestResult
 {
-    public class AllureResult
-    {
-        public string uuid { get; set; }
-        public string name { get; set; }
-        public string status { get; set; }
-        public string stage { get; set; } = "finished";
-        public List<Step> steps { get; set; } = new List<Step>();
-    }
+    public string uuid { get; set; }
+    public string name { get; set; }
+    public string fullName { get; set; }
+    public string status { get; set; }
+    public string stage { get; set; } = "finished";
+    public Step[] steps { get; set; }
+    public Attachment[] attachments { get; set; } = Array.Empty<Attachment>();
+    public Parameter[] parameters { get; set; }
+    public long start { get; set; }
+    public long stop { get; set; }
+}
 
-    public class Step
-    {
-        public string name { get; set; }
-        public string status { get; set; }
-        public List<Attachment> attachments { get; set; } = new List<Attachment>();
-    }
+public class Step
+{
+    public string name { get; set; }
+    public string status { get; set; }
+    public Attachment[] attachments { get; set; } = Array.Empty<Attachment>();
+}
 
-    public class Attachment
-    {
-        public string name { get; set; }
-        public string type { get; set; } = "image/png";
-        public string source { get; set; }
-    }
+public class Attachment
+{
+    public string name { get; set; }
+    public string source { get; set; }
+    public string type { get; set; }
+}
 
-    public static class AllureReporter
+public class Parameter
+{
+    public string name { get; set; }
+    public string value { get; set; }
+}
+
+// 📌 Генерация отчёта
+public static class AllureReportGenerator
+{
+    public static void CreateTestResult(string testName, string wallLength)
     {
-        public static void CreateTestResult(string uuid, string testName, string status, List<Step> steps)
+        var uuid = Guid.NewGuid().ToString();
+        var start = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var stop = start + 5000;
+
+        var result = new AllureTestResult
         {
-            var result = new AllureResult
+            uuid = uuid,
+            name = testName,
+            fullName = $"FenixWallDrawingTest.{testName}",
+            status = "passed",
+            start = start,
+            stop = stop,
+            steps = new[]
             {
-                uuid = uuid,
-                name = testName,
-                status = status,
-                steps = steps
-            };
+                new Step
+                {
+                    name = "Активация инструмента 'Стена'",
+                    status = "passed",
+                    attachments = new[]
+                    {
+                        new Attachment
+                        {
+                            name = "Screenshot",
+                            source = "screenshot_wall.png",
+                            type = "image/png"
+                        }
+                    }
+                },
+                new Step
+                {
+                    name = $"Рисование стены длиной {wallLength} м",
+                    status = "passed"
+                }
+            },
+            parameters = new[]
+            {
+                new Parameter { name = "Длина стены", value = wallLength }
+            }
+        };
 
-            var json = JsonConvert.SerializeObject(result, Formatting.Indented);
-            var reportDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AllureResults");
-
-            if (!Directory.Exists(reportDir))
-                Directory.CreateDirectory(reportDir);
-
-            File.WriteAllText(Path.Combine(reportDir, $"{uuid}.json"), json);
-        }
+        var json = JsonConvert.SerializeObject(result, Formatting.Indented);
+        var reportPath = @"C:\Users\dimas\Documents\allure-results";
+        Directory.CreateDirectory(reportPath);
+        File.WriteAllText(Path.Combine(reportPath, $"{uuid}.json"), json);
     }
 }

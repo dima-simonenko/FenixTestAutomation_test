@@ -1,13 +1,9 @@
-﻿// Services/ToolActivator.cs
-using System;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Capturing;
-using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
-using FlaUI.Core.Tools;
 using FlaUI.UIA3;
 using FenixTestAutomation.Constants;
 using FenixTestAutomation.Utils;
@@ -36,48 +32,63 @@ namespace FenixTestAutomation.Services
                 PressHotkey(tool.Modifier, tool.Key);
                 Thread.Sleep(1200);
 
-                var result = Retry.WhileNull(() =>
-                    _automation.GetDesktop().FindFirstDescendant(cf => cf.ByName(tool.Name)),
-                    TimeSpan.FromSeconds(4));
+                var result = _automation.GetDesktop().FindFirstDescendant(cf => cf.ByName(tool.Name)) != null;
+                Console.WriteLine(result
+                    ? $"Инструмент '{tool.Name}' активировался и найден."
+                    : $"Инструмент '{tool.Name}' не отобразился.");
 
-                if (result.Success)
-                {
-                    ConsoleHelper.WriteSuccess($"Инструмент '{tool.Name}' активировался и найден.");
-                    return true;
-                }
-                else
-                {
-                    ConsoleHelper.WriteWarning($"Инструмент '{tool.Name}' не отобразился. Сохраняем скриншот...");
-                    var timestamp = DateTime.Now.ToString("HHmmss");
-                    var safeName = tool.Name.Replace(" ", "_");
-                    var screenshotPath = Path.Combine("Screenshots", $"fail_{safeName}_{timestamp}.png");
-                    var img = Capture.Element(_mainWindow);
-                    img.ToFile(screenshotPath);
-                    return false;
-                }
+                return result;
             }
             catch (Exception ex)
             {
-                ConsoleHelper.WriteError($"Ошибка при активации '{tool.Name}': {ex.Message}");
+                Console.WriteLine($"Ошибка при активации '{tool.Name}': {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool ActivateAndDrawWall(double lengthInMeters, string projectFolder)
+        {
+            try
+            {
+                _mainWindow.Focus();
+                _mainWindow.SetForeground();
+
+                PressHotkey("Alt", "W");
+                Thread.Sleep(500);
+
+                int pixelsPerMeter = 100;
+                int deltaX = (int)(lengthInMeters * pixelsPerMeter);
+
+                // Рисуем стену и делаем скриншоты до и после
+                MouseSimulator.DrawLine(_mainWindow, deltaX, 0, projectFolder);
+
+
+                // Завершаем рисование
+                Mouse.Click(MouseButton.Left);
+                Thread.Sleep(500);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при рисовании стены: {ex.Message}");
                 return false;
             }
         }
 
         private void PressHotkey(string modifier, string key)
         {
-            var mod = KeyParser.Parse(modifier);
-            var main = KeyParser.Parse(key) ?? throw new ArgumentException($"Неизвестная клавиша: {key}");
+            var modKey = KeyParser.Parse(modifier);
+            var mainKey = KeyParser.Parse(key) ?? throw new ArgumentException($"Неизвестная клавиша: {key}");
 
             _mainWindow.Focus();
             _mainWindow.SetForeground();
             Thread.Sleep(300);
 
-            ConsoleHelper.WriteInfo($"Нажимаем: {modifier}+{key}");
-
-            if (mod.HasValue) Keyboard.Press(mod.Value);
-            Keyboard.Press(main);
-            Keyboard.Release(main);
-            if (mod.HasValue) Keyboard.Release(mod.Value);
+            if (modKey.HasValue) Keyboard.Press(modKey.Value);
+            Keyboard.Press(mainKey);
+            Keyboard.Release(mainKey);
+            if (modKey.HasValue) Keyboard.Release(modKey.Value);
         }
     }
 }

@@ -20,16 +20,11 @@ namespace FenixTestAutomation.Tests
         private ToolActivator _toolActivator;
         private ScreenshotService _screenshotService;
 
-        private const string AllureResultsPath = @"C:\Users\dimas\Documents\AllureResults";
-
         [SetUp]
         public void SetUp()
         {
             _app = Application.Attach("Fenix");
             _automation = new UIA3Automation();
-
-            if (!Directory.Exists(AllureResultsPath))
-                Directory.CreateDirectory(AllureResultsPath);
         }
 
         [TearDown]
@@ -38,45 +33,59 @@ namespace FenixTestAutomation.Tests
             _automation?.Dispose();
         }
 
-        [TestCase("Гражданский объект", "rbCivil")]
-        [TestCase("Производственный объект", "rbIndustrial")]
-        [TestCase("Противопожарные расстояния", "rbFireGap")]
-        public void Инструменты_Активируются_Через_ГорячиеКлавиши(string projectType, string radioId)
+        [Test]
+        public void Инструменты_Активируются_Через_ГорячиеКлавиши()
         {
-            _projectCreator = new ProjectCreator(_app, _automation);
-            var mainWindow = _projectCreator.CreateProject(projectType, radioId, out string projectFolder);
-
-            _toolActivator = new ToolActivator(mainWindow, _automation);
-            _screenshotService = new ScreenshotService(mainWindow);
-
-            var steps = new List<AllureStep>();
-
-            foreach (var tool in HotkeyList.Tools)
+            var projectTypes = new List<(string Name, string RadioId)>
             {
-                bool result = _toolActivator.ActivateAndValidateTool(tool);
-                Assert.That(result, Is.True, $"Инструмент '{tool.Name}' не активировался.");
+                ("Гражданский объект", "rbCivil"),
+                ("Производственный объект", "rbIndustrial"),
+                ("Противопожарные расстояния", "rbFireGap")
+            };
 
-                _screenshotService.Capture(tool.Name, projectFolder);
+            foreach (var (projectType, radioId) in projectTypes)
+            {
+                _projectCreator = new ProjectCreator(_app, _automation);
+                var mainWindow = _projectCreator.CreateProject(projectType, radioId, out string projectFolder);
 
-                var screenshotPath = Path.Combine(projectFolder, "Screenshots", $"{tool.Name.Replace(" ", "_")}.png");
+                _toolActivator = new ToolActivator(mainWindow, _automation);
+                _screenshotService = new ScreenshotService(mainWindow);
 
-                steps.Add(new AllureStep
+                var steps = new List<object>();
+
+                foreach (var tool in HotkeyList.Tools)
                 {
-                    name = $"Активация инструмента '{tool.Name}'",
-                    status = result ? "passed" : "failed",
-                    attachments = new List<AllureAttachment>
-                    {
-                        new AllureAttachment
-                        {
-                            name = "Screenshot",
-                            type = "image/png",
-                            source = screenshotPath
-                        }
-                    }
-                });
-            }
+                    bool result = _toolActivator.ActivateAndValidateTool(tool);
+                    Assert.That(result, Is.True, $"Инструмент '{tool.Name}' не активировался.");
 
-            var testResult = new AllureTestResult
+                    _screenshotService.Capture(tool.Name, projectFolder);
+
+                    string screenshotPath = Path.Combine(projectFolder, "Screenshots", $"{tool.Name.Replace(" ", "_")}.png");
+
+                    steps.Add(new
+                    {
+                        name = $"Активация инструмента '{tool.Name}'",
+                        status = result ? "passed" : "failed",
+                        attachments = new[]
+                        {
+                            new
+                            {
+                                name = "Screenshot",
+                                source = screenshotPath,
+                                type = "image/png"
+                            }
+                        }
+                    });
+                }
+
+                SaveAllureJsonReport(projectType, steps);
+                _projectCreator.SaveAndClose(projectFolder);
+            }
+        }
+
+        private void SaveAllureJsonReport(string projectType, List<object> steps)
+        {
+            var result = new
             {
                 uuid = Guid.NewGuid().ToString(),
                 name = $"Тест проекта {projectType}",
@@ -84,32 +93,12 @@ namespace FenixTestAutomation.Tests
                 steps = steps
             };
 
-            var resultFile = Path.Combine(AllureResultsPath, $"{testResult.uuid}-result.json");
-            File.WriteAllText(resultFile, JsonConvert.SerializeObject(testResult, Formatting.Indented));
+            string reportsFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "AllureResults");
+            if (!Directory.Exists(reportsFolder))
+                Directory.CreateDirectory(reportsFolder);
 
-            _projectCreator.SaveAndClose(projectFolder);
+            string json = JsonConvert.SerializeObject(result, Formatting.Indented);
+            File.WriteAllText(Path.Combine(reportsFolder, $"{result.uuid}-result.json"), json);
         }
-    }
-
-    public class AllureTestResult
-    {
-        public string uuid { get; set; }
-        public string name { get; set; }
-        public string status { get; set; }
-        public List<AllureStep> steps { get; set; }
-    }
-
-    public class AllureStep
-    {
-        public string name { get; set; }
-        public string status { get; set; }
-        public List<AllureAttachment> attachments { get; set; }
-    }
-
-    public class AllureAttachment
-    {
-        public string name { get; set; }
-        public string type { get; set; }
-        public string source { get; set; }
     }
 }
