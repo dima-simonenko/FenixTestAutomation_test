@@ -20,8 +20,8 @@
    ```powershell
    allure generate C:\Users\dimas\Documents\AllureResults -o C:\Users\dimas\Documents\AllureReport --clean
    allure open C:\Users\dimas\Documents\AllureReport
-
-   ## Примечание:
-   Тесты не стабильные. Проблемы, которые нужно решить: в Allure не передаётся JSON c параметрами теста на размещение стены в редакторе топологии.
+   
+ # Примечание:
+Тесты не стабильные. Проблемы, которые нужно решить: в Allure не передаётся JSON c параметрами теста на размещение стены в редакторе топологии.
    
 <img width="1244" alt="image" src="https://github.com/user-attachments/assets/66f812d5-e3b8-4e37-a8f1-26682147fda6" />
